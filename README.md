@@ -39,12 +39,25 @@ To use FOID running on your own machine instead, set `FOID_API_URL=http://localh
 
 To run the production build: `pnpm build && pnpm start`. The same `/api` routes are served by `vite preview`.
 
+## Deploy to Vercel
+
+Vercel doesn't run Vite's server, so the same three routes are deployed as serverless functions in `api/`
+(they reuse `server/foid.js`). `vercel.json` sends every other path to `index.html`.
+
+1. Import the repo in Vercel. The framework is detected as Vite.
+2. Under **Settings → Environment Variables**, add `FOID_CLIENT_ID` and `FOID_CLIENT_SECRET`.
+   Optionally add `SESSION_SECRET`, which signs the session cookie; by default it's derived from the client secret.
+3. Deploy. The address Vercel gives you is not localhost, so add it in the FOID console under your app's
+   **Allowed origins**, for example `https://metupay.vercel.app` (exact, no trailing slash).
+
 ## Files
 
 | File | What it does |
 |---|---|
 | `src/App.jsx` | The whole UI: the welcome screen with `<ContinueWithFoid text="signup_with" />`, then *Welcome &lt;name&gt;* |
-| `server/foid.js` | The server side, as a Vite plugin: `/api/foid/exchange`, `/api/me`, `/api/logout` |
+| `server/foid.js` | The server side: `/api/foid/exchange`, `/api/me`, `/api/logout`, served by Vite locally |
+| `api/` | The same routes as Vercel functions |
+| `vercel.json` | Vercel settings: Vite build, and every non-`/api` path goes to the app |
 | `vite.config.js` | Loads `.env`, plugs in the server, passes only the client ID and popup URL to the browser |
 | `vendor/` | The FOID SDKs (`@foid/react`, `@foid/node`) packed from the FOID repo. Swap them for the npm versions once those are published |
 
@@ -56,5 +69,4 @@ To refresh the SDKs after changing them in the FOID repo:
 rm -rf node_modules/@foid && pnpm install --force
 ```
 
-Sessions are kept in memory, so they reset when the server restarts. That's fine for a demo; a real app
-would use its own session store.
+Sessions are a signed, HttpOnly cookie that lasts 8 hours, so they survive restarts and work on serverless.

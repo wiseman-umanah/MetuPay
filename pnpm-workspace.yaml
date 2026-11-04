@@ -1,2 +1,5 @@
 allowBuilds:
   esbuild: true
+# pnpm 10 (Vercel) uses this name for the same setting
+onlyBuiltDependencies:
+  - esbuild
